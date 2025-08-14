@@ -1,268 +1,199 @@
 //
-//  KeyButton.swift
+//  SimpleStandardKeyboard.swift
 //  
 //
-//  Created by Henrik Storch on 12/24/19.
+//  Created by Henrik Storch on 12/25/19.
 //
 
 import SwiftUI
 
-protocol ClickableKey {
-    func didClick()
-}
+public struct SimpleStandardKeyboard: View, ThemeableView {
+    var theme: KeyboardTheme { settings.theme }
 
-extension ClickableKey {
-    func didClick() {
-        #if canImport(UIKit)
-        UIDevice.current.playInputClick()
-        #endif
+    @ObservedObject var settings: KeyboardSettings
+
+    public init(settings: KeyboardSettings, textInput textInputOverride: Binding<String>? = nil) {
+        self.settings = settings
+
+        if let overrideStr = textInputOverride {
+            self.settings.changeTextInput(to: overrideStr)
+        }
     }
-}
 
-struct ShiftKeyButton: View {
-    @Binding var isUpperCase: Bool!
+    // Back-compat: expose old name used by tests, now mapped to the new bottom bar
+    var spaceRow: some View { bottomBar }
 
-    var body: some View {
-        Button(action: { self.isUpperCase?.toggle() }) {
-            if #available(iOS 15, macOS 12, *) {
-                AnyView(Image(systemName: isUpperCase ? "shift.fill" : "shift")
-                    .dynamicTypeSize(.large))
-            } else if #available(iOS 14, macOS 11, *) {
-                AnyView(Image(systemName: isUpperCase ? "shift.fill" : "shift"))
-            } else {
-                AnyView(Text(isUpperCase! ? "Up": "lw", bundle: .module))
+    var bottomBar: some View {
+        HStack(spacing: 8) {
+            switch settings.mode {
+            case .letters:
+                ModeSwitchKeyButton(title: "123") { self.settings.mode = .numbers }
+            case .numbers, .symbols:
+                ModeSwitchKeyButton(title: "ABC") { self.settings.mode = .letters }
+            }
+
+            EmojiKeyButton(text: $settings.text)
+            if settings.showSpace {
+                SpaceKeyButton(text: $settings.text)
+                    .layoutPriority(2)
+            }
+
+            if let actionIcon = settings.actionButton {
+                ActionKeyButton(icon: actionIcon) {
+                    self.settings.action?()
+                }
             }
         }
-        .padding(10)
-        .foregroundColor(.primary)
-        .font(.headline.weight(.semibold))
-        .frame(height: 40)
-        .background(Color.black.opacity(0.4))
-        .cornerRadius(5)
-    }
-}
-
-struct KeyButton: View, ClickableKey {
-    @Binding var text: String
-    var letter: String
-    @Environment(\.colorScheme) var colorScheme
-
-    var body: some View {
-        Button(action: {
-            self.text.append(self.letter)
-            didClick()
-        }) {
-            Text(letter)
-                .font(.system(size: 25))
-                .fixedSize()
-                .scaledToFit()
-                .scaleEffect(0.75)
-                .frame(height: 40)
-                .frame(minWidth: 20, idealWidth: .infinity, maxWidth: .infinity)
-                .foregroundColor(.primary)
-                .background(colorScheme.keyboardKeyColor)
-                .cornerRadius(5)
-                .shadow(color: .black, radius: 0, y: 1)
-        }
-    }
-}
-
-struct FRAccentKeyButton: View {
-    @Binding var text: String
-
-    var body: some View {
-        Button(action: {
-            self.action()
-        }) {
-            Text("´")
-                .foregroundColor(.primary)
-                .font(.system(size: 25))
-                .padding(5)
-                .frame(height: 40)
-                .frame(minWidth: 20, idealWidth: 25, maxWidth: 25)
-                .background(Color.black.opacity(0.4))
-                .cornerRadius(5)
-                .layoutPriority(10)
-                .shadow(color: .black, radius: 0, y: 1)
-        }
     }
 
-    internal func action() {
-        var modified = ""
-        let suffix = self.text.popLast()
-        switch suffix {
-        case "a": modified = "à"
-        case "e": modified = "é"
-        case "i": modified = "î"
-        case "u": modified = "û"
-        case "o": modified = "ô"
-        case "c": modified = "ç"
-        default:
-            modified = "’"
-            if let suffix = suffix {
-                self.text.append(suffix)
+    // Back-compat: old single numbers row used by tests only
+    var numbersRow: some View {
+        HStack(spacing: 10) {
+            ForEach(Language.numbers(areUppercased: self.settings.isUpperCase ?? false), id: \.self) { key in
+                KeyButton(text: self.$settings.text, letter: key)
             }
         }
-
-        text.append(modified)
-    }
-}
-
-struct SpaceKeyButton: View, ClickableKey {
-    @Binding var text: String
-    @Environment(\.colorScheme) var colorScheme
-
-    var content: some View {
-        let spaceText = Text("space", bundle: .module)
-        if #available(iOS 15.0, macOS 12, *) {
-            return AnyView(spaceText.dynamicTypeSize(.large))
-        } else {
-            return AnyView(spaceText)
-        }
     }
 
-    var body: some View {
-        Button(action: { self.text.append(" "); didClick() }) {
-            content
-                .padding()
-                .frame(idealWidth: .infinity, maxWidth: .infinity)
-                .frame(height: 50)
-                .foregroundColor(.primary)
-                .background(colorScheme.keyboardKeyColor)
-                .cornerRadius(7)
-                .layoutPriority(2)
-                .shadow(color: .black, radius: 1, y: 1)
-        }
-    }
-}
-
-struct DeleteKeyButton: View {
-    @Binding var text: String
-
-    var body: some View {
-        Button(action: {
-            guard !self.text.isEmpty else { return }
-            _ = self.text.removeLast()
-        }) {
-            if #available(iOS 15, macOS 12, *) {
-                AnyView(Image(systemName: "delete.left").dynamicTypeSize(.large))
-            } else if #available(iOS 14, macOS 11, *) {
-                AnyView(Image(systemName: "delete.left"))
-            } else {
-                AnyView(Text("⌫"))
+    var numbersGrid: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                ForEach(["1","2","3","4","5","6","7","8","9","0"], id: \.self) { key in
+                    GridKeyButton(text: self.$settings.text, label: key)
+                }
+            }
+            HStack(spacing: 6) {
+                ForEach(["-","/",":",";","(",")","$","&","@","\""], id: \.self) { key in
+                    GridKeyButton(text: self.$settings.text, label: key)
+                }
+            }
+            HStack(spacing: 6) {
+                ModeSwitchKeyButton(title: "#+=") { self.settings.mode = .symbols }
+                    .frame(minWidth: 0, maxWidth: .infinity)
+                ForEach([".", ",", "?", "!", "'"], id: \.self) { key in
+                    GridKeyButton(text: self.$settings.text, label: key)
+                }
+                DeleteKeyButton(text: self.$settings.text)
+                    .frame(minWidth: 0, maxWidth: .infinity)
             }
         }
-        .padding(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 7)
-                .stroke(Color.primary, lineWidth: 4)
-        )
-        .foregroundColor(.primary)
-        .frame(height: 42)
-        .font(Font.headline.weight(.semibold))
-        .background(Color.black.opacity(0.4))
-        .cornerRadius(7)
     }
-}
 
-struct EmojiKeyButton: View, ClickableKey {
-    @Binding var text: String
-    @Environment(\.colorScheme) var colorScheme
-
-    var body: some View {
-        Button(action: { didClick() }) {
-            if #available(iOS 14, macOS 11, *) {
-                AnyView(Image(systemName: "face.smiling").font(.system(size: 20, weight: .medium)))
-            } else {
-                AnyView(Text(":)"))
+    var symbolsGrid: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                ForEach(["[", "]", "{", "}", "#", "%", "^", "*", "+", "="], id: \.self) { key in
+                    GridKeyButton(text: self.$settings.text, label: key)
+                }
+            }
+            HStack(spacing: 6) {
+                ForEach(["_", "\\", "|", "~", "<", ">", "€", "£", "¥", "•"], id: \.self) { key in
+                    GridKeyButton(text: self.$settings.text, label: key)
+                }
+            }
+            HStack(spacing: 6) {
+                ModeSwitchKeyButton(title: "123") { self.settings.mode = .numbers }
+                    .frame(minWidth: 0, maxWidth: .infinity)
+                ForEach([".", ",", "?", "!", "'"], id: \.self) { key in
+                    GridKeyButton(text: self.$settings.text, label: key)
+                }
+                DeleteKeyButton(text: self.$settings.text)
+                    .frame(minWidth: 0, maxWidth: .infinity)
             }
         }
-        .padding(10)
-        .foregroundColor(.primary)
-        .frame(height: 40)
-        .background(colorScheme.keyboardKeyColor)
-        .cornerRadius(7)
-        .shadow(color: .black, radius: 0, y: 1)
-    }
-}
-
-struct ModeSwitchKeyButton: View, ClickableKey {
-    var title: String
-    var action: () -> Void
-    @Environment(\.colorScheme) var colorScheme
-
-    var body: some View {
-        Button(action: { action(); didClick() }) {
-            Text(title)
-                .font(.system(size: 18, weight: .medium))
-                .padding(.horizontal, 12)
-                .frame(height: 42)
-                .foregroundColor(.primary)
-                .background(colorScheme.keyboardKeyColor)
-                .cornerRadius(7)
-                .shadow(color: .black, radius: 0, y: 1)
-        }
-    }
-}
-
-struct GridKeyButton: View, ClickableKey {
-    @Binding var text: String
-    var label: String
-    @Environment(\.colorScheme) var colorScheme
-
-    var body: some View {
-        Button(action: { self.text.append(self.label); didClick() }) {
-            Text(label)
-                .font(.system(size: 18, weight: .medium))
-                .frame(minWidth: 0, maxWidth: .infinity)
-                .frame(height: 42)
-                .foregroundColor(.primary)
-                .background(colorScheme.keyboardKeyColor)
-                .cornerRadius(7)
-                .shadow(color: .black, radius: 0, y: 1)
-        }
-    }
-}
-
-struct ActionKeyButton: View {
-    @State var icon: Icon
-    var action: () -> Void
-
-    var iconView: some View {
-        if #available(iOS 15.0, macOS 12, *) {
-            return AnyView(icon.view.dynamicTypeSize(.large))
-        } else {
-            return icon.view
-        }
     }
 
-    var body: some View {
-        Button(action: self.action) {
-            iconView
-                .padding()
-                .frame(minWidth: 100, maxWidth: .infinity)
-                .frame(height: 50)
-                .foregroundColor(.white)
-                .background(Color.blue)
-                .cornerRadius(7)
-                .shadow(color: .black, radius: 2, y: 2)
-        }
-    }
-}
-
-public enum Icon {
-    case done, search, go
-
-    var view: some View {
-        switch self {
-        case .done: return AnyView(Text("Done!", bundle: .module))
-        case .search:
-            if #available(iOS 14, macOS 11, *) {
-                return AnyView(Image(systemName: "magnifyingglass"))
-            }else {
-                return AnyView(Text("Search", bundle: .module))
+    var keyboardRows: some View {
+        ForEach(0..<settings.language.rows(areUppercased: settings.isUpperCase ?? false).count, id: \.self) { idx in
+            HStack(spacing: 0) {
+                if idx == 2 {
+                    if self.settings.isUpperCase != nil {
+                        ShiftKeyButton(isUpperCase: self.$settings.isUpperCase)
+                        Spacer(minLength: 2)
+                            .frame(maxWidth: 15)
+                            .layoutPriority(2)
+                    }
+                } else if idx == 1 {
+                    Spacer(minLength: 3)
+                        .frame(maxWidth: 10)
+                        .layoutPriority(11)
+                }
+                self.rowFor(idx)
+                if idx == 2 {
+                    Group {
+                        Spacer(minLength: 2)
+                            .frame(maxWidth: 15)
+                            .layoutPriority(2)
+                        if settings.language == .french {
+                            FRAccentKeyButton(text: $settings.text)
+                            Spacer()
+                        }
+                        DeleteKeyButton(text: self.$settings.text)
+                    }
+                } else if idx == 1 {
+                    Spacer(minLength: 3)
+                        .frame(maxWidth: 10)
+                        .layoutPriority(11)
+                }
             }
-        case .go: return AnyView(Text("Go!", bundle: .module))
+        }
+    }
+
+    fileprivate func rowFor(_ index: Int) -> some View {
+        let rows = self.settings.language.rows(areUppercased: settings.isUpperCase ?? false)[index]
+        return ForEach(rows, id: \.self) { key in
+            Spacer(minLength: settings.language.spacing)
+            KeyButton(text: self.$settings.text, letter: key)
+            Spacer(minLength: settings.language.spacing)
+        }
+    }
+
+    public var body: some View {
+        if settings.isShown {
+            VStack(spacing: 10) {
+                switch settings.mode {
+                case .letters:
+                    keyboardRows
+                case .numbers:
+                    numbersGrid
+                case .symbols:
+                    symbolsGrid
+                }
+                bottomBar
+            }
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+            .modifier(OuterKeyboardThemingModifier(theme: theme, backroundColor: keyboardBackground))
+        }
+    }
+}
+
+struct SimpleStandardKeyboard_Previews: PreviewProvider {
+    static var previews: some View {
+        ZStack {
+            LinearGradient(colors: [.red, .green, .purple], startPoint: .bottomLeading, endPoint: .topTrailing)
+            VStack {
+                Spacer()
+                SimpleStandardKeyboard(
+                    settings: KeyboardSettings(
+                        language: .english,
+                        textInput: nil,
+                        theme: .system,
+                        actionButton: .search,
+                        showNumbers: true,
+                        showSpace: true,
+                        isUpperCase: true))
+                SimpleStandardKeyboard(
+                    settings: KeyboardSettings(
+                        language: .english,
+                        textInput: nil,
+                        theme: .system,
+                        actionButton: .search,
+                        showNumbers: true,
+                        showSpace: false,
+                        isUpperCase: true))
+                    .environment(\.locale, .init(identifier: "ru"))
+//                    .preferredColorScheme(.dark)
+            }
         }
     }
 }
