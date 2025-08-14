@@ -1,10 +1,3 @@
-//
-//  SimpleStandardKeyboard.swift
-//  
-//
-//  Created by Henrik Storch on 12/25/19.
-//
-
 import SwiftUI
 
 public struct SimpleStandardKeyboard: View, ThemeableView {
@@ -26,23 +19,26 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
         emojiSystemName: String? = nil,
         onEmojiTap: (() -> Void)? = nil
     ) {
+        // 1) Initialize all stored properties first
         self.settings = settings
-
-        if let overrideStr = textInputOverride {
-            self.settings.changeTextInput(to: overrideStr)
-        }
-
         self.onActionOverride = onAction
         self.actionIconOverride = actionIcon
         self.emojiSystemNameOverride = emojiSystemName
         self.onEmojiTapOverride = onEmojiTap
 
-        // Bridge to existing settings for legacy behavior
-        if let onAction { self.settings.action = onAction }
-        if let actionIcon { self.settings.actionButton = actionIcon }
+        // 2) Now it's safe to use self / call methods
+        if let textInputOverride {
+            self.settings.changeTextInput(to: textInputOverride)
+        }
+        if let onAction {
+            self.settings.action = onAction
+        }
+        if let actionIcon {
+            self.settings.actionButton = actionIcon
+        }
     }
 
-    // Back-compat: old alias
+    // Back-compat: expose old name used by tests, now mapped to the new bottom bar
     var spaceRow: some View { bottomBar }
 
     var bottomBar: some View {
@@ -54,6 +50,7 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
                 ModeSwitchKeyButton(title: "ABC") { self.settings.mode = .letters }
             }
 
+            // Emoji button override if provided; otherwise the default
             if let name = emojiSystemNameOverride {
                 CustomEmojiKeyButton(systemName: name, onTap: onEmojiTapOverride)
             } else {
@@ -216,5 +213,35 @@ struct CustomEmojiKeyButton: View, ClickableKey {
         .background(colorScheme.keyboardKeyColor)
         .cornerRadius(7)
         .shadow(color: .black, radius: 0, y: 1)
+    }
+}
+
+struct SimpleStandardKeyboard_Previews: PreviewProvider {
+    static var previews: some View {
+        ZStack {
+            LinearGradient(colors: [.red, .green, .purple], startPoint: .bottomLeading, endPoint: .topTrailing)
+            VStack {
+                Spacer()
+                SimpleStandardKeyboard(
+                                        settings: KeyboardSettings(
+                                            language: .english,
+                                            textInput: nil,
+                                            theme: .floating,
+                                            actionButton: .go,
+                                            showNumbers: false,
+                                            showSpace: true,
+                                            isUpperCase: false
+                                        ),
+                                        onAction: {
+                                        },
+                                        actionIcon: .go,
+                                        emojiSystemName: "xmark.circle.fill",
+                                        onEmojiTap: {
+                                            // Optional: hook for custom emoji tap behavior
+                                        }
+                                    )
+//                    .preferredColorScheme(.dark)
+            }
+        }
     }
 }
