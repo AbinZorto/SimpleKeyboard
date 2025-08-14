@@ -8,6 +8,12 @@
 import Combine
 import SwiftUI
 
+public enum KeyboardMode {
+    case letters
+    case numbers
+    case symbols
+}
+
 public protocol SimpleKeyboardInput {
     var currentText: String { get }
     mutating func replaceAll(with text: String)
@@ -61,6 +67,8 @@ public class KeyboardSettings: ObservableObject {
 
     public var theme: KeyboardTheme
 
+        @Published public var mode: KeyboardMode = .letters
+
     /// `nil` mean there is no action icon
     var actionButton: Icon?
 
@@ -94,6 +102,7 @@ public class KeyboardSettings: ObservableObject {
             self.showSpace = showSpace
             self.isUpperCase = isUpperCase
             self.actionButton = actionButton
+            self.mode = .letters
         }
 
     func changeTextInput(to newInput: SimpleKeyboardInput) {
