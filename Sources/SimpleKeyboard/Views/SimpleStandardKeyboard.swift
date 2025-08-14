@@ -24,7 +24,7 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
     var spaceRow: some View { bottomBar }
 
     var bottomBar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             switch settings.mode {
             case .letters:
                 ModeSwitchKeyButton(title: "123") { self.settings.mode = .numbers }
@@ -69,12 +69,10 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
             }
             HStack(spacing: 6) {
                 ModeSwitchKeyButton(title: "#+=") { self.settings.mode = .symbols }
-                    .frame(minWidth: 0, maxWidth: .infinity)
                 ForEach([".", ",", "?", "!", "'"], id: \.self) { key in
                     GridKeyButton(text: self.$settings.text, label: key)
                 }
                 DeleteKeyButton(text: self.$settings.text)
-                    .frame(minWidth: 0, maxWidth: .infinity)
             }
         }
     }
@@ -93,12 +91,10 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
             }
             HStack(spacing: 6) {
                 ModeSwitchKeyButton(title: "123") { self.settings.mode = .numbers }
-                    .frame(minWidth: 0, maxWidth: .infinity)
                 ForEach([".", ",", "?", "!", "'"], id: \.self) { key in
                     GridKeyButton(text: self.$settings.text, label: key)
                 }
                 DeleteKeyButton(text: self.$settings.text)
-                    .frame(minWidth: 0, maxWidth: .infinity)
             }
         }
     }
@@ -114,8 +110,8 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
                             .layoutPriority(2)
                     }
                 } else if idx == 1 {
-                    Spacer(minLength: 3)
-                        .frame(maxWidth: 10)
+                    Spacer(minLength: 1)
+                        .frame(maxWidth: 8)
                         .layoutPriority(11)
                 }
                 self.rowFor(idx)
@@ -161,6 +157,8 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
                 }
                 bottomBar
             }
+            .padding(.leading, 4)
+            .padding(.trailing, 8)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .modifier(OuterKeyboardThemingModifier(theme: theme, backroundColor: keyboardBackground))
         }

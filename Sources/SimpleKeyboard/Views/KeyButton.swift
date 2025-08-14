@@ -36,7 +36,7 @@ struct ShiftKeyButton: View {
         .padding(10)
         .foregroundColor(.primary)
         .font(.headline.weight(.semibold))
-        .frame(height: 40)
+        .frame(width: 40, height: 40)
         .background(Color.black.opacity(0.4))
         .cornerRadius(5)
     }
@@ -58,7 +58,7 @@ struct KeyButton: View, ClickableKey {
                 .scaledToFit()
                 .scaleEffect(0.75)
                 .frame(height: 40)
-                .frame(minWidth: 20, idealWidth: .infinity, maxWidth: .infinity)
+                .frame(minWidth: 20, maxWidth: .infinity)
                 .foregroundColor(.primary)
                 .background(colorScheme.keyboardKeyColor)
                 .cornerRadius(5)
@@ -125,12 +125,11 @@ struct SpaceKeyButton: View, ClickableKey {
         Button(action: { self.text.append(" "); didClick() }) {
             content
                 .padding()
-                .frame(idealWidth: .infinity, maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(minWidth: 120)
+                .frame(height: 40)
                 .foregroundColor(.primary)
                 .background(colorScheme.keyboardKeyColor)
-                .cornerRadius(7)
-                .layoutPriority(2)
+                .cornerRadius(5)
                 .shadow(color: .black, radius: 1, y: 1)
         }
     }
@@ -153,15 +152,11 @@ struct DeleteKeyButton: View {
             }
         }
         .padding(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 7)
-                .stroke(Color.primary, lineWidth: 4)
-        )
         .foregroundColor(.primary)
-        .frame(height: 42)
-        .font(Font.headline.weight(.semibold))
+        .font(.headline.weight(.light))
+        .frame(width: 40, height: 40)
         .background(Color.black.opacity(0.4))
-        .cornerRadius(7)
+        .cornerRadius(5)
     }
 }
 
@@ -194,12 +189,13 @@ struct ModeSwitchKeyButton: View, ClickableKey {
     var body: some View {
         Button(action: { action(); didClick() }) {
             Text(title)
-                .font(.system(size: 18, weight: .medium))
-                .padding(.horizontal, 12)
-                .frame(height: 42)
+                .font(.system(size: 15, weight: .medium))
+                .padding(2)
+                .frame(width: 40)
+                .frame(height: 40)
                 .foregroundColor(.primary)
                 .background(colorScheme.keyboardKeyColor)
-                .cornerRadius(7)
+                .cornerRadius(5)
                 .shadow(color: .black, radius: 0, y: 1)
         }
     }
@@ -240,8 +236,8 @@ struct ActionKeyButton: View {
         Button(action: self.action) {
             iconView
                 .padding()
-                .frame(minWidth: 100, maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(minWidth: 70, maxWidth: .infinity)
+                .frame(height: 40)
                 .foregroundColor(.white)
                 .background(Color.blue)
                 .cornerRadius(7)
