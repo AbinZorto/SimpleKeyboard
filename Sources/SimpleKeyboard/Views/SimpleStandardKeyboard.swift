@@ -8,6 +8,7 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
     // Optional overrides (backwards-compatible)
     private let onActionOverride: (() -> Void)?
     private let actionIconOverride: Icon?
+    private let actionSystemImageNameOverride: String?
     private let emojiSystemNameOverride: String?
     private let onEmojiTapOverride: (() -> Void)?
 
@@ -16,20 +17,23 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
         textInput textInputOverride: Binding<String>? = nil,
         onAction: (() -> Void)? = nil,
         actionIcon: Icon? = nil,
+        actionSystemImageName: String? = nil,
         emojiSystemName: String? = nil,
         onEmojiTap: (() -> Void)? = nil
     ) {
-        // 1) Initialize all stored properties first
+        // Initialize stored properties first
         self.settings = settings
         self.onActionOverride = onAction
         self.actionIconOverride = actionIcon
+        self.actionSystemImageNameOverride = actionSystemImageName
         self.emojiSystemNameOverride = emojiSystemName
         self.onEmojiTapOverride = onEmojiTap
 
-        // 2) Now it's safe to use self / call methods
+        // Now safe to use self
         if let textInputOverride {
             self.settings.changeTextInput(to: textInputOverride)
         }
+        // Preserve legacy behavior if overrides are supplied
         if let onAction {
             self.settings.action = onAction
         }
@@ -38,7 +42,7 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
         }
     }
 
-    // Back-compat: expose old name used by tests, now mapped to the new bottom bar
+    // Back-compat: old alias
     var spaceRow: some View { bottomBar }
 
     var bottomBar: some View {
@@ -50,7 +54,7 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
                 ModeSwitchKeyButton(title: "ABC") { self.settings.mode = .letters }
             }
 
-            // Emoji button override if provided; otherwise the default
+            // Emoji override path or default
             if let name = emojiSystemNameOverride {
                 CustomEmojiKeyButton(systemName: name, onTap: onEmojiTapOverride)
             } else {
@@ -62,13 +66,23 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
                     .layoutPriority(2)
             }
 
-            if let icon = (actionIconOverride ?? settings.actionButton) {
+            // Determine the effective action callback
+            let effectiveAction: () -> Void = {
+                if let onActionOverride {
+                    onActionOverride()
+                } else {
+                    self.settings.action?()
+                }
+            }
+
+            // If a custom SF Symbol name is given, render a system-image-based action button
+            if let systemName = actionSystemImageNameOverride, !systemName.isEmpty {
+                SystemImageActionKeyButton(systemName: systemName, action: effectiveAction)
+            }
+            // Otherwise, fall back to the Icon-based action button if available
+            else if let icon = (actionIconOverride ?? settings.actionButton) {
                 ActionKeyButton(icon: icon) {
-                    if let onActionOverride {
-                        onActionOverride()
-                    } else {
-                        self.settings.action?()
-                    }
+                    effectiveAction()
                 }
             }
         }
@@ -194,6 +208,7 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
     }
 }
 
+// Custom emoji button when an override system image is provided.
 struct CustomEmojiKeyButton: View, ClickableKey {
     var systemName: String
     var onTap: (() -> Void)?
@@ -216,6 +231,29 @@ struct CustomEmojiKeyButton: View, ClickableKey {
     }
 }
 
+// New system-image-based action button (keeps ActionKeyButton untouched)
+struct SystemImageActionKeyButton: View {
+    var systemName: String
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            if #available(iOS 14, macOS 11, *) {
+                AnyView(Image(systemName: systemName))
+            } else {
+                AnyView(Text(systemName))
+            }
+        }
+        .padding()
+        .frame(minWidth: 30, maxWidth: 100)
+        .frame(height: 40)
+        .foregroundColor(.white)
+        .background(Color.blue)
+        .cornerRadius(7)
+        .shadow(color: .black, radius: 2, y: 2)
+    }
+}
+
 struct SimpleStandardKeyboard_Previews: PreviewProvider {
     static var previews: some View {
         ZStack {
@@ -223,24 +261,23 @@ struct SimpleStandardKeyboard_Previews: PreviewProvider {
             VStack {
                 Spacer()
                 SimpleStandardKeyboard(
-                                        settings: KeyboardSettings(
-                                            language: .english,
-                                            textInput: nil,
-                                            theme: .floating,
-                                            actionButton: .go,
-                                            showNumbers: false,
-                                            showSpace: true,
-                                            isUpperCase: false
-                                        ),
-                                        onAction: {
-                                        },
-                                        actionIcon: .go,
-                                        emojiSystemName: "xmark.circle.fill",
-                                        onEmojiTap: {
-                                            // Optional: hook for custom emoji tap behavior
-                                        }
-                                    )
-//                    .preferredColorScheme(.dark)
+                    settings: KeyboardSettings(
+                        language: .english,
+                        textInput: nil,
+                        theme: .system,
+                        actionButton: .go,
+                        showNumbers: false,
+                        showSpace: true,
+                        isUpperCase: false
+                    ),
+                    
+                    onAction: { },
+                    actionSystemImageName: "paperplane.fill", // <- any SF Symbol
+                    emojiSystemName: "xmark.circle.fill",
+                    onEmojiTap: {
+                    // Optional: hook for custom emoji tap behavior
+                    }
+                )
             }
         }
     }
