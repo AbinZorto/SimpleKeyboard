@@ -12,15 +12,37 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
 
     @ObservedObject var settings: KeyboardSettings
 
-    public init(settings: KeyboardSettings, textInput textInputOverride: Binding<String>? = nil) {
+    // Optional overrides (backwards-compatible)
+    private let onActionOverride: (() -> Void)?
+    private let actionIconOverride: Icon?
+    private let emojiSystemNameOverride: String?
+    private let onEmojiTapOverride: (() -> Void)?
+
+    public init(
+        settings: KeyboardSettings,
+        textInput textInputOverride: Binding<String>? = nil,
+        onAction: (() -> Void)? = nil,
+        actionIcon: Icon? = nil,
+        emojiSystemName: String? = nil,
+        onEmojiTap: (() -> Void)? = nil
+    ) {
         self.settings = settings
 
         if let overrideStr = textInputOverride {
             self.settings.changeTextInput(to: overrideStr)
         }
+
+        self.onActionOverride = onAction
+        self.actionIconOverride = actionIcon
+        self.emojiSystemNameOverride = emojiSystemName
+        self.onEmojiTapOverride = onEmojiTap
+
+        // Bridge to existing settings for legacy behavior
+        if let onAction { self.settings.action = onAction }
+        if let actionIcon { self.settings.actionButton = actionIcon }
     }
 
-    // Back-compat: expose old name used by tests, now mapped to the new bottom bar
+    // Back-compat: old alias
     var spaceRow: some View { bottomBar }
 
     var bottomBar: some View {
@@ -32,15 +54,24 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
                 ModeSwitchKeyButton(title: "ABC") { self.settings.mode = .letters }
             }
 
-            EmojiKeyButton(text: $settings.text)
+            if let name = emojiSystemNameOverride {
+                CustomEmojiKeyButton(systemName: name, onTap: onEmojiTapOverride)
+            } else {
+                EmojiKeyButton(text: $settings.text)
+            }
+
             if settings.showSpace {
                 SpaceKeyButton(text: $settings.text)
                     .layoutPriority(2)
             }
 
-            if let actionIcon = settings.actionButton {
-                ActionKeyButton(icon: actionIcon) {
-                    self.settings.action?()
+            if let icon = (actionIconOverride ?? settings.actionButton) {
+                ActionKeyButton(icon: icon) {
+                    if let onActionOverride {
+                        onActionOverride()
+                    } else {
+                        self.settings.action?()
+                    }
                 }
             }
         }
@@ -166,33 +197,24 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
     }
 }
 
-struct SimpleStandardKeyboard_Previews: PreviewProvider {
-    static var previews: some View {
-        ZStack {
-            LinearGradient(colors: [.red, .green, .purple], startPoint: .bottomLeading, endPoint: .topTrailing)
-            VStack {
-                Spacer()
-                SimpleStandardKeyboard(
-                    settings: KeyboardSettings(
-                        language: .english,
-                        textInput: nil,
-                        theme: .system,
-                        actionButton: .go,
-                        showNumbers: true,
-                        showSpace: true,
-                        isUpperCase: true))
-                SimpleStandardKeyboard(
-                    settings: KeyboardSettings(
-                        language: .english,
-                        textInput: nil,
-                        theme: .system,
-                        actionButton: .search,
-                        showNumbers: true,
-                        showSpace: false,
-                        isUpperCase: true))
-                    .environment(\.locale, .init(identifier: "ru"))
-//                    .preferredColorScheme(.dark)
+struct CustomEmojiKeyButton: View, ClickableKey {
+    var systemName: String
+    var onTap: (() -> Void)?
+    @Environment(\.colorScheme) var colorScheme
+
+    var body: some View {
+        Button(action: { didClick(); onTap?() }) {
+            if #available(iOS 14, macOS 11, *) {
+                AnyView(Image(systemName: systemName).font(.system(size: 20, weight: .medium)))
+            } else {
+                AnyView(Text(":)"))
             }
         }
+        .padding(10)
+        .foregroundColor(.primary)
+        .frame(height: 40)
+        .background(colorScheme.keyboardKeyColor)
+        .cornerRadius(7)
+        .shadow(color: .black, radius: 0, y: 1)
     }
 }
