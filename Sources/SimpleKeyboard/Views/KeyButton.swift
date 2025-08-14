@@ -58,7 +58,7 @@ struct KeyButton: View, ClickableKey {
                 .scaledToFit()
                 .scaleEffect(0.75)
                 .frame(height: 40)
-                .frame(minWidth: 20, maxWidth: .infinity)
+                .frame(minWidth: 32, maxWidth: .infinity)
                 .foregroundColor(.primary)
                 .background(colorScheme.keyboardKeyColor)
                 .cornerRadius(5)
@@ -125,7 +125,7 @@ struct SpaceKeyButton: View, ClickableKey {
         Button(action: { self.text.append(" "); didClick() }) {
             content
                 .padding()
-                .frame(minWidth: 120)
+                .frame(minWidth: 190)
                 .frame(height: 40)
                 .foregroundColor(.primary)
                 .background(colorScheme.keyboardKeyColor)
@@ -209,12 +209,15 @@ struct GridKeyButton: View, ClickableKey {
     var body: some View {
         Button(action: { self.text.append(self.label); didClick() }) {
             Text(label)
-                .font(.system(size: 18, weight: .medium))
-                .frame(minWidth: 0, maxWidth: .infinity)
-                .frame(height: 42)
+                .font(.system(size: 25))
+                .fixedSize()
+                .scaledToFit()
+                .scaleEffect(0.75)
+                .frame(height: 40)
+                .frame(minWidth: 32, maxWidth: .infinity)
                 .foregroundColor(.primary)
                 .background(colorScheme.keyboardKeyColor)
-                .cornerRadius(7)
+                .cornerRadius(5)
                 .shadow(color: .black, radius: 0, y: 1)
         }
     }
@@ -236,7 +239,7 @@ struct ActionKeyButton: View {
         Button(action: self.action) {
             iconView
                 .padding()
-                .frame(minWidth: 70, maxWidth: .infinity)
+                .frame(minWidth: 30, maxWidth: 100)
                 .frame(height: 40)
                 .foregroundColor(.white)
                 .background(Color.blue)

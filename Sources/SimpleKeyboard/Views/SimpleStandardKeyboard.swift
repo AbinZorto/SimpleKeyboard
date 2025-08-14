@@ -56,7 +56,7 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
     }
 
     var numbersGrid: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             HStack(spacing: 6) {
                 ForEach(["1","2","3","4","5","6","7","8","9","0"], id: \.self) { key in
                     GridKeyButton(text: self.$settings.text, label: key)
@@ -78,7 +78,7 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
     }
 
     var symbolsGrid: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             HStack(spacing: 6) {
                 ForEach(["[", "]", "{", "}", "#", "%", "^", "*", "+", "="], id: \.self) { key in
                     GridKeyButton(text: self.$settings.text, label: key)
