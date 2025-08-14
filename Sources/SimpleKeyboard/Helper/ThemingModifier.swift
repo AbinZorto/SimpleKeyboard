@@ -12,17 +12,23 @@ struct OuterKeyboardThemingModifier<Background: View>: ViewModifier {
     var backroundColor: Background
 
     func body(content: Content) -> some View {
-        if theme == .system {
+        switch theme {
+        case .system:
             content
                 .padding(10)
                 .background(backroundColor)
-        } else if theme == .floating {
+
+        case .floating:
             content
                 .cornerRadius(25, corners: [.bottomLeft, .bottomRight])
                 .padding(10)
                 .background(backroundColor)
                 .cornerRadius(25)
                 .padding(10)
+
+        default:
+            // For themes like .transparent, .color(_), .material(_)
+            content
         }
     }
 }

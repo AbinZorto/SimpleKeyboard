@@ -8,7 +8,19 @@
 import SwiftUI
 
 public enum KeyboardTheme {
-    case system, floating
+    case system
+    case floating
+    case transparent
+    case color(Color)
+    case material(MaterialKind)   // No @available on the case itself
+}
+
+public enum MaterialKind {
+    case ultraThin
+    case thin
+    case regular
+    case thick
+    case ultraThick
 }
 
 protocol ThemeableView {
@@ -25,11 +37,37 @@ extension NSColor { static var systemGray3: NSColor { NSColor.systemGray } }
 #endif
 
 extension View where Self: ThemeableView {
+    @ViewBuilder
     var keyboardBackground: some View {
-        if #available(iOS 15.0, macOS 12.0, *) {
-            return AnyView(EmptyView().background(.ultraThinMaterial))
-        } else {
-            return AnyView(Color(PlatformColor.systemGray3.withAlphaComponent(0.75)))
+        switch theme {
+        case .system, .floating:
+            if #available(iOS 15.0, macOS 12.0, *) {
+                EmptyView().background(.ultraThinMaterial)
+            } else {
+                Color(PlatformColor.systemGray3.withAlphaComponent(0.75))
+            }
+
+        case .transparent:
+            Color.clear
+
+        case .color(let color):
+            color
+
+        case .material(let kind):
+            if #available(iOS 15.0, macOS 12.0, *) {
+                let mat: Material = {
+                    switch kind {
+                    case .ultraThin:  return .ultraThinMaterial
+                    case .thin:       return .thinMaterial
+                    case .regular:    return .regularMaterial
+                    case .thick:      return .thickMaterial
+                    case .ultraThick: return .ultraThickMaterial
+                    }
+                }()
+                EmptyView().background(mat)
+            } else {
+                Color(PlatformColor.systemGray3.withAlphaComponent(0.75))
+            }
         }
     }
 }
@@ -42,42 +80,28 @@ extension ColorScheme {
 
 public struct RectCorner: OptionSet {
     public var rawValue: UInt
-    public init(rawValue: UInt) {
-        self.rawValue = rawValue
-    }
+    public init(rawValue: UInt) { self.rawValue = rawValue }
 
     public static var topLeft: RectCorner { RectCorner(rawValue: 1 << 0) }
-
     public static var topRight: RectCorner { RectCorner(rawValue: 1 << 1) }
-
     public static var bottomLeft: RectCorner { RectCorner(rawValue: 1 << 2) }
-
     public static var bottomRight: RectCorner { RectCorner(rawValue: 1 << 3) }
-
     public static var allCorners: RectCorner { [.topRight, .topLeft, .bottomLeft, .bottomRight] }
 }
 
 extension View {
     func cornerRadius(_ radius: CGFloat, corners: RectCorner) -> some View {
-        clipShape( RoundedCorner(radius: radius, corners: corners) )
+        clipShape(RoundedCorner(radius: radius, corners: corners))
     }
 }
 
 // https://stackoverflow.com/a/56763282/9506784
 struct RoundedCorner: Shape {
     init(radius: CGFloat, corners: RectCorner) {
-        if corners.contains(.bottomLeft) {
-            bl = radius
-        }
-        if corners.contains(.bottomRight) {
-            br = radius
-        }
-        if corners.contains(.topLeft) {
-            tl = radius
-        }
-        if corners.contains(.topRight) {
-            tr = radius
-        }
+        if corners.contains(.bottomLeft)  { bl = radius }
+        if corners.contains(.bottomRight) { br = radius }
+        if corners.contains(.topLeft)     { tl = radius }
+        if corners.contains(.topRight)    { tr = radius }
     }
 
     var tl: CGFloat = 0.0
@@ -87,11 +111,9 @@ struct RoundedCorner: Shape {
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
-
         let width = rect.size.width
         let height = rect.size.height
 
-        // Make sure we do not exceed the size of the rectangle
         let tr = min(min(self.tr, height/2), width/2)
         let tl = min(min(self.tl, height/2), width/2)
         let bl = min(min(self.bl, height/2), width/2)
@@ -114,7 +136,6 @@ struct RoundedCorner: Shape {
         path.addArc(center: CGPoint(x: tl, y: tl), radius: tl,
                     startAngle: Angle(degrees: 180), endAngle: Angle(degrees: 270), clockwise: false)
         path.closeSubpath()
-
         return path
     }
 }
