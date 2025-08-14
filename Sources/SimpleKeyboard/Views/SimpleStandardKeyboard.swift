@@ -161,6 +161,7 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
             .padding(.trailing, 8)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .modifier(OuterKeyboardThemingModifier(theme: theme, backroundColor: keyboardBackground))
+            .environmentObject(settings)
         }
     }
 }
@@ -176,7 +177,7 @@ struct SimpleStandardKeyboard_Previews: PreviewProvider {
                         language: .english,
                         textInput: nil,
                         theme: .system,
-                        actionButton: .search,
+                        actionButton: .go,
                         showNumbers: true,
                         showSpace: true,
                         isUpperCase: true))

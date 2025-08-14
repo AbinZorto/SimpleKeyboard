@@ -21,14 +21,31 @@ extension ClickableKey {
 
 struct ShiftKeyButton: View {
     @Binding var isUpperCase: Bool!
+    @EnvironmentObject var settings: KeyboardSettings
+    @State private var lastTapDate: Date? = nil
 
     var body: some View {
-        Button(action: { self.isUpperCase?.toggle() }) {
+        Button(action: {
+            let now = Date()
+            if let last = lastTapDate, now.timeIntervalSince(last) < 0.3 {
+                settings.isCapsLocked.toggle()
+                self.isUpperCase = settings.isCapsLocked
+                lastTapDate = nil
+            } else {
+                if settings.isCapsLocked {
+                    settings.isCapsLocked = false
+                    self.isUpperCase = false
+                } else {
+                    self.isUpperCase?.toggle()
+                }
+                lastTapDate = now
+            }
+        }) {
             if #available(iOS 15, macOS 12, *) {
-                AnyView(Image(systemName: isUpperCase ? "shift.fill" : "shift")
+                AnyView(Image(systemName: settings.isCapsLocked ? "capslock.fill" : (isUpperCase ? "shift.fill" : "shift"))
                     .dynamicTypeSize(.large))
             } else if #available(iOS 14, macOS 11, *) {
-                AnyView(Image(systemName: isUpperCase ? "shift.fill" : "shift"))
+                AnyView(Image(systemName: settings.isCapsLocked ? "capslock.fill" : (isUpperCase ? "shift.fill" : "shift")))
             } else {
                 AnyView(Text(isUpperCase! ? "Up": "lw", bundle: .module))
             }
@@ -46,11 +63,15 @@ struct KeyButton: View, ClickableKey {
     @Binding var text: String
     var letter: String
     @Environment(\.colorScheme) var colorScheme
+    @EnvironmentObject var settings: KeyboardSettings
 
     var body: some View {
         Button(action: {
             self.text.append(self.letter)
             didClick()
+            if (self.settings.isUpperCase ?? false) && !self.settings.isCapsLocked {
+                self.settings.isUpperCase = false
+            }
         }) {
             Text(letter)
                 .font(.system(size: 25))
@@ -137,6 +158,7 @@ struct SpaceKeyButton: View, ClickableKey {
 
 struct DeleteKeyButton: View {
     @Binding var text: String
+    @State private var deleteTimer: Timer? = nil
 
     var body: some View {
         Button(action: {
@@ -157,6 +179,28 @@ struct DeleteKeyButton: View {
         .frame(width: 40, height: 40)
         .background(Color.black.opacity(0.4))
         .cornerRadius(5)
+        .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 50, pressing: { pressing in
+            if pressing {
+                startDeleteTimer()
+            } else {
+                stopDeleteTimer()
+            }
+        }, perform: {})
+    }
+
+    private func startDeleteTimer() {
+        stopDeleteTimer()
+        deleteTimer = Timer.scheduledTimer(withTimeInterval: 0.07, repeats: true) { _ in
+            if !self.text.isEmpty {
+                _ = self.text.removeLast()
+            }
+        }
+        RunLoop.current.add(deleteTimer!, forMode: .common)
+    }
+
+    private func stopDeleteTimer() {
+        deleteTimer?.invalidate()
+        deleteTimer = nil
     }
 }
 

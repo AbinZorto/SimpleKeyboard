@@ -83,6 +83,9 @@ public class KeyboardSettings: ObservableObject {
     /// `nil` mean there is no need to switch, so there will be no shift-key
     @Published public var isUpperCase: Bool?
 
+    /// When enabled via double-tapping shift, letters remain uppercased until disabled
+    @Published public var isCapsLocked: Bool = false
+
     /// `textInput` should be `nil` when working directly with SwiftUI,
     /// in that case you would bind your input directly to the `textInput` of the Keyboard
     public init(
