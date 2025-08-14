@@ -158,10 +158,69 @@ struct DeleteKeyButton: View {
                 .stroke(Color.primary, lineWidth: 4)
         )
         .foregroundColor(.primary)
-        .frame(height: 40)
+        .frame(height: 42)
         .font(Font.headline.weight(.semibold))
         .background(Color.black.opacity(0.4))
         .cornerRadius(7)
+    }
+}
+
+struct EmojiKeyButton: View, ClickableKey {
+    @Binding var text: String
+    @Environment(\.colorScheme) var colorScheme
+
+    var body: some View {
+        Button(action: { didClick() }) {
+            if #available(iOS 14, macOS 11, *) {
+                AnyView(Image(systemName: "face.smiling").font(.system(size: 20, weight: .medium)))
+            } else {
+                AnyView(Text(":)"))
+            }
+        }
+        .padding(10)
+        .foregroundColor(.primary)
+        .frame(height: 40)
+        .background(colorScheme.keyboardKeyColor)
+        .cornerRadius(7)
+        .shadow(color: .black, radius: 0, y: 1)
+    }
+}
+
+struct ModeSwitchKeyButton: View, ClickableKey {
+    var title: String
+    var action: () -> Void
+    @Environment(\.colorScheme) var colorScheme
+
+    var body: some View {
+        Button(action: { action(); didClick() }) {
+            Text(title)
+                .font(.system(size: 18, weight: .medium))
+                .padding(.horizontal, 12)
+                .frame(height: 42)
+                .foregroundColor(.primary)
+                .background(colorScheme.keyboardKeyColor)
+                .cornerRadius(7)
+                .shadow(color: .black, radius: 0, y: 1)
+        }
+    }
+}
+
+struct GridKeyButton: View, ClickableKey {
+    @Binding var text: String
+    var label: String
+    @Environment(\.colorScheme) var colorScheme
+
+    var body: some View {
+        Button(action: { self.text.append(self.label); didClick() }) {
+            Text(label)
+                .font(.system(size: 18, weight: .medium))
+                .frame(minWidth: 0, maxWidth: .infinity)
+                .frame(height: 42)
+                .foregroundColor(.primary)
+                .background(colorScheme.keyboardKeyColor)
+                .cornerRadius(7)
+                .shadow(color: .black, radius: 0, y: 1)
+        }
     }
 }
 
