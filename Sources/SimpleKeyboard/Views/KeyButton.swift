@@ -67,7 +67,7 @@ struct KeyButton: View, ClickableKey {
 
     var body: some View {
         Button(action: {
-            self.text.append(self.letter)
+            self.settings.insert(self.letter)
             didClick()
             if (self.settings.isUpperCase ?? false) && !self.settings.isCapsLocked {
                 self.settings.isUpperCase = false
@@ -132,6 +132,7 @@ struct FRAccentKeyButton: View {
 struct SpaceKeyButton: View, ClickableKey {
     @Binding var text: String
     @Environment(\.colorScheme) var colorScheme
+    @EnvironmentObject var settings: KeyboardSettings
 
     var content: some View {
         let spaceText = Text("space", bundle: .module)
@@ -143,7 +144,7 @@ struct SpaceKeyButton: View, ClickableKey {
     }
 
     var body: some View {
-        Button(action: { self.text.append(" "); didClick() }) {
+        Button(action: { self.settings.insert(" "); didClick() }) {
             content
                 .padding()
                 .frame(minWidth: 190)
@@ -159,11 +160,15 @@ struct SpaceKeyButton: View, ClickableKey {
 struct DeleteKeyButton: View {
     @Binding var text: String
     @State private var deleteTimer: Timer? = nil
+    @EnvironmentObject var settings: KeyboardSettings
 
     var body: some View {
         Button(action: {
             guard !self.text.isEmpty else { return }
-            _ = self.text.removeLast()
+            let index = text.index(text.startIndex, offsetBy: settings.textCursor - 1)
+            var newText = text
+            newText.remove(at: index)
+            text = newText
         }) {
             if #available(iOS 15, macOS 12, *) {
                 AnyView(Image(systemName: "delete.left").dynamicTypeSize(.large))
@@ -192,7 +197,10 @@ struct DeleteKeyButton: View {
         stopDeleteTimer()
         deleteTimer = Timer.scheduledTimer(withTimeInterval: 0.07, repeats: true) { _ in
             if !self.text.isEmpty {
-                _ = self.text.removeLast()
+                let index = text.index(text.startIndex, offsetBy: settings.textCursor - 1)
+                var newText = text
+                newText.remove(at: index)
+                text = newText
             }
         }
         RunLoop.current.add(deleteTimer!, forMode: .common)
@@ -249,9 +257,10 @@ struct GridKeyButton: View, ClickableKey {
     @Binding var text: String
     var label: String
     @Environment(\.colorScheme) var colorScheme
+    @EnvironmentObject var settings: KeyboardSettings
 
     var body: some View {
-        Button(action: { self.text.append(self.label); didClick() }) {
+        Button(action: { self.settings.insert(self.label); didClick() }) {
             Text(label)
                 .font(.system(size: 25))
                 .fixedSize()

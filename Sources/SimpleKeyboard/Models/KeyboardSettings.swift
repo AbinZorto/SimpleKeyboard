@@ -57,10 +57,19 @@ extension UITextField: SimpleKeyboardInput {
 #endif
 
 public class KeyboardSettings: ObservableObject {
+    public var textCursor = 0
     public var text: String = "" {
         didSet {
             textInput?.replaceAll(with: text)
+            textCursor = text.count
         }
+    }
+
+    public func insert(_ char: String) {
+        let index = text.index(text.startIndex, offsetBy: textCursor)
+        var newText = text
+        newText.insert(contentsOf: char, at: index)
+        text = newText
     }
 
     @Published public var language: Language
