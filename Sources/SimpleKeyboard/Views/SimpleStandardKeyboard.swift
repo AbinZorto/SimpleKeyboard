@@ -11,6 +11,9 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
     private let actionSystemImageNameOverride: String?
     private let emojiSystemNameOverride: String?
     private let onEmojiTapOverride: (() -> Void)?
+    // Cursor-aware handlers
+    private let insertTextHandlerOverride: ((String) -> Void)?
+    private let deleteBackwardHandlerOverride: (() -> Void)?
 
     public init(
         settings: KeyboardSettings,
@@ -19,7 +22,9 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
         actionIcon: Icon? = nil,
         actionSystemImageName: String? = nil,
         emojiSystemName: String? = nil,
-        onEmojiTap: (() -> Void)? = nil
+        onEmojiTap: (() -> Void)? = nil,
+        insertTextHandler: ((String) -> Void)? = nil,
+        deleteBackwardHandler: (() -> Void)? = nil
     ) {
         // Initialize stored properties first
         self.settings = settings
@@ -28,6 +33,8 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
         self.actionSystemImageNameOverride = actionSystemImageName
         self.emojiSystemNameOverride = emojiSystemName
         self.onEmojiTapOverride = onEmojiTap
+        self.insertTextHandlerOverride = insertTextHandler
+        self.deleteBackwardHandlerOverride = deleteBackwardHandler
 
         // Now safe to use self
         if let textInputOverride {
@@ -204,6 +211,8 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .modifier(OuterKeyboardThemingModifier(theme: theme, backroundColor: keyboardBackground))
             .environmentObject(settings)
+            .environment(\.insertTextHandler, insertTextHandlerOverride ?? settings.insertTextHandler)
+            .environment(\.deleteBackwardHandler, deleteBackwardHandlerOverride ?? settings.deleteBackwardHandler)
         }
     }
 }

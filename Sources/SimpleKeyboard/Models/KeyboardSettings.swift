@@ -75,6 +75,10 @@ public class KeyboardSettings: ObservableObject {
     public var textInput: SimpleKeyboardInput?
     public var action: (() -> Void)?
 
+    // Optional cursor-aware handlers for insertion and deletion
+    public var insertTextHandler: ((String) -> Void)?
+    public var deleteBackwardHandler: (() -> Void)?
+
     @Published public var isShown = true
 
     @Published public var showNumbers: Bool
