@@ -57,7 +57,7 @@ extension UITextField: SimpleKeyboardInput {
 #endif
 
 public class KeyboardSettings: ObservableObject {
-    public var text: String = "" {
+    @Published public var text: String = "" {
         didSet {
             textInput?.replaceAll(with: text)
         }
