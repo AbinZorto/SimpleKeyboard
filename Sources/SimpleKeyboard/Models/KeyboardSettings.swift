@@ -19,6 +19,13 @@ public protocol SimpleKeyboardInput {
     mutating func replaceAll(with text: String)
 }
 
+// Enhanced protocol for cursor-aware text input
+public protocol CursorAwareTextInput: SimpleKeyboardInput {
+    var cursorPosition: Int { get set }
+    mutating func insertText(_ text: String, at position: Int)
+    mutating func deleteText(at position: Int, length: Int)
+}
+
 extension Binding: SimpleKeyboardInput where Value == String {
     public var currentText: String {
         self.wrappedValue
@@ -26,6 +33,51 @@ extension Binding: SimpleKeyboardInput where Value == String {
 
     public mutating func replaceAll(with text: String) {
         self.wrappedValue = text
+    }
+}
+
+// Create a cursor-aware wrapper for String bindings
+public class CursorAwareStringInput: ObservableObject, CursorAwareTextInput {
+    @Published public var text: String
+    @Published public var cursorPosition: Int
+    
+    public var binding: Binding<String>
+    
+    public init(_ binding: Binding<String>, cursorPosition: Int = 0) {
+        self.binding = binding
+        self.text = binding.wrappedValue
+        self.cursorPosition = min(cursorPosition, binding.wrappedValue.count)
+    }
+    
+    public var currentText: String {
+        text
+    }
+    
+    public func replaceAll(with text: String) {
+        self.text = text
+        self.binding.wrappedValue = text
+        self.cursorPosition = text.count
+    }
+    
+    public func insertText(_ insertText: String, at position: Int) {
+        let safePosition = max(0, min(position, text.count))
+        let startIndex = text.index(text.startIndex, offsetBy: safePosition)
+        text.insert(contentsOf: insertText, at: startIndex)
+        binding.wrappedValue = text
+        cursorPosition = safePosition + insertText.count
+    }
+    
+    public func deleteText(at position: Int, length: Int) {
+        let safePosition = max(0, min(position, text.count))
+        let safeLength = max(0, min(length, text.count - safePosition))
+        
+        if safeLength > 0 {
+            let startIndex = text.index(text.startIndex, offsetBy: safePosition)
+            let endIndex = text.index(startIndex, offsetBy: safeLength)
+            text.removeSubrange(startIndex..<endIndex)
+            binding.wrappedValue = text
+            cursorPosition = safePosition
+        }
     }
 }
 
@@ -57,19 +109,10 @@ extension UITextField: SimpleKeyboardInput {
 #endif
 
 public class KeyboardSettings: ObservableObject {
-    public var textCursor = 0
     public var text: String = "" {
         didSet {
             textInput?.replaceAll(with: text)
-            textCursor = text.count
         }
-    }
-
-    public func insert(_ char: String) {
-        let index = text.index(text.startIndex, offsetBy: textCursor)
-        var newText = text
-        newText.insert(contentsOf: char, at: index)
-        text = newText
     }
 
     @Published public var language: Language

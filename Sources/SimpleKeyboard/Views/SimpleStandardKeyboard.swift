@@ -64,7 +64,6 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
             if settings.showSpace {
                 SpaceKeyButton(text: $settings.text)
                     .layoutPriority(2)
-                    .environmentObject(settings)
             }
 
             // Determine the effective action callback
@@ -103,23 +102,19 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
             HStack(spacing: 6) {
                 ForEach(["1","2","3","4","5","6","7","8","9","0"], id: \.self) { key in
                     GridKeyButton(text: self.$settings.text, label: key)
-                        .environmentObject(settings)
                 }
             }
             HStack(spacing: 6) {
                 ForEach(["-","/",":",";","(",")","$","&","@","\""], id: \.self) { key in
                     GridKeyButton(text: self.$settings.text, label: key)
-                        .environmentObject(settings)
                 }
             }
             HStack(spacing: 6) {
                 ModeSwitchKeyButton(title: "#+=") { self.settings.mode = .symbols }
                 ForEach([".", ",", "?", "!", "'"], id: \.self) { key in
                     GridKeyButton(text: self.$settings.text, label: key)
-                        .environmentObject(settings)
                 }
                 DeleteKeyButton(text: self.$settings.text)
-                    .environmentObject(settings)
             }
         }
     }
@@ -129,23 +124,19 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
             HStack(spacing: 6) {
                 ForEach(["[", "]", "{", "}", "#", "%", "^", "*", "+", "="], id: \.self) { key in
                     GridKeyButton(text: self.$settings.text, label: key)
-                        .environmentObject(settings)
                 }
             }
             HStack(spacing: 6) {
                 ForEach(["_", "\\", "|", "~", "<", ">", "€", "£", "¥", "•"], id: \.self) { key in
                     GridKeyButton(text: self.$settings.text, label: key)
-                        .environmentObject(settings)
                 }
             }
             HStack(spacing: 6) {
                 ModeSwitchKeyButton(title: "123") { self.settings.mode = .numbers }
                 ForEach([".", ",", "?", "!", "'"], id: \.self) { key in
                     GridKeyButton(text: self.$settings.text, label: key)
-                        .environmentObject(settings)
                 }
                 DeleteKeyButton(text: self.$settings.text)
-                    .environmentObject(settings)
             }
         }
     }
@@ -175,8 +166,7 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
                             FRAccentKeyButton(text: $settings.text)
                             Spacer()
                         }
-                        DeleteKeyButton(text: $settings.text)
-                            .environmentObject(settings)
+                        DeleteKeyButton(text: self.$settings.text)
                     }
                 } else if idx == 1 {
                     Spacer(minLength: 3)

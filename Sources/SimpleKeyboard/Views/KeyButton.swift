@@ -67,7 +67,14 @@ struct KeyButton: View, ClickableKey {
 
     var body: some View {
         Button(action: {
-            self.settings.insert(self.letter)
+            // Check if we have cursor-aware input
+            if let cursorAwareInput = settings.textInput as? CursorAwareStringInput {
+                cursorAwareInput.insertText(self.letter, at: cursorAwareInput.cursorPosition)
+                self.text = cursorAwareInput.text
+            } else {
+                // Fallback to simple append for backwards compatibility
+                self.text.append(self.letter)
+            }
             didClick()
             if (self.settings.isUpperCase ?? false) && !self.settings.isCapsLocked {
                 self.settings.isUpperCase = false
@@ -144,7 +151,17 @@ struct SpaceKeyButton: View, ClickableKey {
     }
 
     var body: some View {
-        Button(action: { self.settings.insert(" "); didClick() }) {
+        Button(action: { 
+            // Check if we have cursor-aware input
+            if let cursorAwareInput = settings.textInput as? CursorAwareStringInput {
+                cursorAwareInput.insertText(" ", at: cursorAwareInput.cursorPosition)
+                self.text = cursorAwareInput.text
+            } else {
+                // Fallback to simple append for backwards compatibility
+                self.text.append(" ")
+            }
+            didClick() 
+        }) {
             content
                 .padding()
                 .frame(minWidth: 190)
@@ -165,10 +182,18 @@ struct DeleteKeyButton: View {
     var body: some View {
         Button(action: {
             guard !self.text.isEmpty else { return }
-            let index = text.index(text.startIndex, offsetBy: settings.textCursor - 1)
-            var newText = text
-            newText.remove(at: index)
-            text = newText
+            
+            // Check if we have cursor-aware input
+            if let cursorAwareInput = settings.textInput as? CursorAwareStringInput {
+                let deletePosition = max(0, cursorAwareInput.cursorPosition - 1)
+                if deletePosition < cursorAwareInput.text.count {
+                    cursorAwareInput.deleteText(at: deletePosition, length: 1)
+                    self.text = cursorAwareInput.text
+                }
+            } else {
+                // Fallback to simple removeLast for backwards compatibility
+                _ = self.text.removeLast()
+            }
         }) {
             if #available(iOS 15, macOS 12, *) {
                 AnyView(Image(systemName: "delete.left").dynamicTypeSize(.large))
@@ -197,10 +222,17 @@ struct DeleteKeyButton: View {
         stopDeleteTimer()
         deleteTimer = Timer.scheduledTimer(withTimeInterval: 0.07, repeats: true) { _ in
             if !self.text.isEmpty {
-                let index = text.index(text.startIndex, offsetBy: settings.textCursor - 1)
-                var newText = text
-                newText.remove(at: index)
-                text = newText
+                // Check if we have cursor-aware input
+                if let cursorAwareInput = self.settings.textInput as? CursorAwareStringInput {
+                    let deletePosition = max(0, cursorAwareInput.cursorPosition - 1)
+                    if deletePosition < cursorAwareInput.text.count {
+                        cursorAwareInput.deleteText(at: deletePosition, length: 1)
+                        self.text = cursorAwareInput.text
+                    }
+                } else {
+                    // Fallback to simple removeLast for backwards compatibility
+                    _ = self.text.removeLast()
+                }
             }
         }
         RunLoop.current.add(deleteTimer!, forMode: .common)
@@ -260,7 +292,17 @@ struct GridKeyButton: View, ClickableKey {
     @EnvironmentObject var settings: KeyboardSettings
 
     var body: some View {
-        Button(action: { self.settings.insert(self.label); didClick() }) {
+        Button(action: { 
+            // Check if we have cursor-aware input
+            if let cursorAwareInput = settings.textInput as? CursorAwareStringInput {
+                cursorAwareInput.insertText(self.label, at: cursorAwareInput.cursorPosition)
+                self.text = cursorAwareInput.text
+            } else {
+                // Fallback to simple append for backwards compatibility
+                self.text.append(self.label)
+            }
+            didClick() 
+        }) {
             Text(label)
                 .font(.system(size: 25))
                 .fixedSize()
