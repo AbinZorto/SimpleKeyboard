@@ -67,7 +67,7 @@ struct KeyButton: View, ClickableKey {
 
     var body: some View {
         Button(action: {
-            insertTextAtCursor(self.letter)
+            self.text.append(self.letter)
             didClick()
             if (self.settings.isUpperCase ?? false) && !self.settings.isCapsLocked {
                 self.settings.isUpperCase = false
@@ -86,15 +86,10 @@ struct KeyButton: View, ClickableKey {
                 .shadow(color: .black, radius: 0, y: 1)
         }
     }
-    
-    private func insertTextAtCursor(_ newText: String) {
-        settings.insertTextAtCursor(newText)
-    }
 }
 
 struct FRAccentKeyButton: View {
     @Binding var text: String
-    @EnvironmentObject var settings: KeyboardSettings
 
     var body: some View {
         Button(action: {
@@ -126,22 +121,17 @@ struct FRAccentKeyButton: View {
         default:
             modified = "’"
             if let suffix = suffix {
-                insertTextAtCursor(String(suffix))
+                self.text.append(suffix)
             }
         }
 
-        insertTextAtCursor(modified)
-    }
-    
-    private func insertTextAtCursor(_ newText: String) {
-        settings.insertTextAtCursor(newText)
+        text.append(modified)
     }
 }
 
 struct SpaceKeyButton: View, ClickableKey {
     @Binding var text: String
     @Environment(\.colorScheme) var colorScheme
-    @EnvironmentObject var settings: KeyboardSettings
 
     var content: some View {
         let spaceText = Text("space", bundle: .module)
@@ -153,7 +143,7 @@ struct SpaceKeyButton: View, ClickableKey {
     }
 
     var body: some View {
-        Button(action: { insertTextAtCursor(" "); didClick() }) {
+        Button(action: { self.text.append(" "); didClick() }) {
             content
                 .padding()
                 .frame(minWidth: 190)
@@ -164,20 +154,16 @@ struct SpaceKeyButton: View, ClickableKey {
                 .shadow(color: .black, radius: 1, y: 1)
         }
     }
-    
-    private func insertTextAtCursor(_ newText: String) {
-        settings.insertTextAtCursor(newText)
-    }
 }
 
 struct DeleteKeyButton: View {
     @Binding var text: String
     @State private var deleteTimer: Timer? = nil
-    @EnvironmentObject var settings: KeyboardSettings
 
     var body: some View {
         Button(action: {
-            settings.deleteBackward()
+            guard !self.text.isEmpty else { return }
+            _ = self.text.removeLast()
         }) {
             if #available(iOS 15, macOS 12, *) {
                 AnyView(Image(systemName: "delete.left").dynamicTypeSize(.large))
@@ -205,7 +191,9 @@ struct DeleteKeyButton: View {
     private func startDeleteTimer() {
         stopDeleteTimer()
         deleteTimer = Timer.scheduledTimer(withTimeInterval: 0.07, repeats: true) { _ in
-            self.settings.deleteBackward()
+            if !self.text.isEmpty {
+                _ = self.text.removeLast()
+            }
         }
         RunLoop.current.add(deleteTimer!, forMode: .common)
     }
@@ -261,10 +249,9 @@ struct GridKeyButton: View, ClickableKey {
     @Binding var text: String
     var label: String
     @Environment(\.colorScheme) var colorScheme
-    @EnvironmentObject var settings: KeyboardSettings
 
     var body: some View {
-        Button(action: { insertTextAtCursor(self.label); didClick() }) {
+        Button(action: { self.text.append(self.label); didClick() }) {
             Text(label)
                 .font(.system(size: 25))
                 .fixedSize()
@@ -277,10 +264,6 @@ struct GridKeyButton: View, ClickableKey {
                 .cornerRadius(5)
                 .shadow(color: .black, radius: 0, y: 1)
         }
-    }
-    
-    private func insertTextAtCursor(_ newText: String) {
-        settings.insertTextAtCursor(newText)
     }
 }
 
@@ -326,4 +309,3 @@ public enum Icon {
         }
     }
 }
-
