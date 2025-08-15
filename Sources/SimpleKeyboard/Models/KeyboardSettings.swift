@@ -62,6 +62,9 @@ public class KeyboardSettings: ObservableObject {
             textInput?.replaceAll(with: text)
         }
     }
+    
+    /// Cursor position for cursor-aware text insertion
+    @Published public var cursorPosition: Int = 0
 
     @Published public var language: Language
 
@@ -111,5 +114,22 @@ public class KeyboardSettings: ObservableObject {
     func changeTextInput(to newInput: SimpleKeyboardInput) {
         self.textInput = newInput
         self.text = newInput.currentText
+    }
+    
+    /// Insert text at the current cursor position
+    public func insertTextAtCursor(_ newText: String) {
+        let position = min(cursorPosition, text.count)
+        let startIndex = text.index(text.startIndex, offsetBy: position)
+        text.insert(contentsOf: newText, at: startIndex)
+        cursorPosition = position + newText.count
+    }
+    
+    /// Delete character before cursor position
+    public func deleteBackward() {
+        guard cursorPosition > 0 else { return }
+        let position = cursorPosition - 1
+        let index = text.index(text.startIndex, offsetBy: position)
+        text.remove(at: index)
+        cursorPosition = position
     }
 }
