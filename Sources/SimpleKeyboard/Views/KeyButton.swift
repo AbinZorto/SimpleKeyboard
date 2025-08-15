@@ -7,6 +7,28 @@
 
 import SwiftUI
 
+// MARK: - Cursor-aware text editing environment hooks
+
+private struct InsertTextHandlerKey: EnvironmentKey {
+    static let defaultValue: ((String) -> Void)? = nil
+}
+
+private struct DeleteBackwardHandlerKey: EnvironmentKey {
+    static let defaultValue: (() -> Void)? = nil
+}
+
+public extension EnvironmentValues {
+    public var insertTextHandler: ((String) -> Void)? {
+        get { self[InsertTextHandlerKey.self] }
+        set { self[InsertTextHandlerKey.self] = newValue }
+    }
+
+    public var deleteBackwardHandler: (() -> Void)? {
+        get { self[DeleteBackwardHandlerKey.self] }
+        set { self[DeleteBackwardHandlerKey.self] = newValue }
+    }
+}
+
 protocol ClickableKey {
     func didClick()
 }
@@ -64,10 +86,15 @@ struct KeyButton: View, ClickableKey {
     var letter: String
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var settings: KeyboardSettings
+    @Environment(\.insertTextHandler) private var insertTextHandler
 
     var body: some View {
         Button(action: {
-            self.text.append(self.letter)
+            if let insert = insertTextHandler {
+                insert(self.letter)
+            } else {
+                self.text.append(self.letter)
+            }
             didClick()
             if (self.settings.isUpperCase ?? false) && !self.settings.isCapsLocked {
                 self.settings.isUpperCase = false
@@ -132,6 +159,7 @@ struct FRAccentKeyButton: View {
 struct SpaceKeyButton: View, ClickableKey {
     @Binding var text: String
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.insertTextHandler) private var insertTextHandler
 
     var content: some View {
         let spaceText = Text("space", bundle: .module)
@@ -143,7 +171,14 @@ struct SpaceKeyButton: View, ClickableKey {
     }
 
     var body: some View {
-        Button(action: { self.text.append(" "); didClick() }) {
+        Button(action: {
+            if let insert = insertTextHandler {
+                insert(" ")
+            } else {
+                self.text.append(" ")
+            }
+            didClick()
+        }) {
             content
                 .padding()
                 .frame(minWidth: 190)
@@ -159,11 +194,16 @@ struct SpaceKeyButton: View, ClickableKey {
 struct DeleteKeyButton: View {
     @Binding var text: String
     @State private var deleteTimer: Timer? = nil
+    @Environment(\.deleteBackwardHandler) private var deleteBackwardHandler
 
     var body: some View {
         Button(action: {
-            guard !self.text.isEmpty else { return }
-            _ = self.text.removeLast()
+            if let delete = deleteBackwardHandler {
+                delete()
+            } else {
+                guard !self.text.isEmpty else { return }
+                _ = self.text.removeLast()
+            }
         }) {
             if #available(iOS 15, macOS 12, *) {
                 AnyView(Image(systemName: "delete.left").dynamicTypeSize(.large))
@@ -191,8 +231,12 @@ struct DeleteKeyButton: View {
     private func startDeleteTimer() {
         stopDeleteTimer()
         deleteTimer = Timer.scheduledTimer(withTimeInterval: 0.07, repeats: true) { _ in
-            if !self.text.isEmpty {
-                _ = self.text.removeLast()
+            if let delete = deleteBackwardHandler {
+                delete()
+            } else {
+                if !self.text.isEmpty {
+                    _ = self.text.removeLast()
+                }
             }
         }
         RunLoop.current.add(deleteTimer!, forMode: .common)
@@ -249,9 +293,17 @@ struct GridKeyButton: View, ClickableKey {
     @Binding var text: String
     var label: String
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.insertTextHandler) private var insertTextHandler
 
     var body: some View {
-        Button(action: { self.text.append(self.label); didClick() }) {
+        Button(action: {
+            if let insert = insertTextHandler {
+                insert(self.label)
+            } else {
+                self.text.append(self.label)
+            }
+            didClick()
+        }) {
             Text(label)
                 .font(.system(size: 25))
                 .fixedSize()
