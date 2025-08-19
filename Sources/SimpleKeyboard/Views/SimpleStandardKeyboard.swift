@@ -213,7 +213,6 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
             .environmentObject(settings)
             .environment(\.insertTextHandler, insertTextHandlerOverride ?? settings.insertTextHandler)
             .environment(\.deleteBackwardHandler, deleteBackwardHandlerOverride ?? settings.deleteBackwardHandler)
-            .modifier(LandscapeKeyHeightModifier())
         }
     }
 }
@@ -223,7 +222,6 @@ struct CustomEmojiKeyButton: View, ClickableKey {
     var systemName: String
     var onTap: (() -> Void)?
     @Environment(\.colorScheme) var colorScheme
-    @Environment(\.keyHeight) private var keyHeight
 
     var body: some View {
         Button(action: { didClick(); onTap?() }) {
@@ -235,7 +233,7 @@ struct CustomEmojiKeyButton: View, ClickableKey {
         }
         .padding(10)
         .foregroundColor(.primary)
-        .frame(height: keyHeight)
+        .frame(height: 40)
         .background(colorScheme.keyboardKeyColor)
         .cornerRadius(7)
         .shadow(color: .black, radius: 0, y: 1)
@@ -246,7 +244,6 @@ struct CustomEmojiKeyButton: View, ClickableKey {
 struct SystemImageActionKeyButton: View {
     var systemName: String
     var action: () -> Void
-    @Environment(\.keyHeight) private var keyHeight
 
     var body: some View {
         Button(action: action) {
@@ -258,22 +255,11 @@ struct SystemImageActionKeyButton: View {
         }
         .padding()
         .frame(minWidth: 30, maxWidth: 100)
-        .frame(height: keyHeight)
+        .frame(height: 40)
         .foregroundColor(.white)
         .background(Color.blue)
         .cornerRadius(7)
         .shadow(color: .black, radius: 2, y: 2)
-    }
-}
-
-// Applies a shorter key height in landscape based on view size
-struct LandscapeKeyHeightModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        GeometryReader { proxy in
-            let isLandscape = proxy.size.width > proxy.size.height
-            content
-                .environment(\.keyHeight, isLandscape ? 30 : 40)
-        }
     }
 }
 

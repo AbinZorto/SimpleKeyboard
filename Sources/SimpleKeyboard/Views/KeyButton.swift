@@ -17,10 +17,6 @@ private struct DeleteBackwardHandlerKey: EnvironmentKey {
     static let defaultValue: (() -> Void)? = nil
 }
 
-private struct KeyHeightKey: EnvironmentKey {
-    static let defaultValue: CGFloat = 40
-}
-
 public extension EnvironmentValues {
     public var insertTextHandler: ((String) -> Void)? {
         get { self[InsertTextHandlerKey.self] }
@@ -30,11 +26,6 @@ public extension EnvironmentValues {
     public var deleteBackwardHandler: (() -> Void)? {
         get { self[DeleteBackwardHandlerKey.self] }
         set { self[DeleteBackwardHandlerKey.self] = newValue }
-    }
-
-    public var keyHeight: CGFloat {
-        get { self[KeyHeightKey.self] }
-        set { self[KeyHeightKey.self] = newValue }
     }
 }
 
@@ -54,7 +45,6 @@ struct ShiftKeyButton: View {
     @Binding var isUpperCase: Bool!
     @EnvironmentObject var settings: KeyboardSettings
     @State private var lastTapDate: Date? = nil
-    @Environment(\.keyHeight) private var keyHeight
 
     var body: some View {
         Button(action: {
@@ -85,7 +75,7 @@ struct ShiftKeyButton: View {
         .padding(10)
         .foregroundColor(.primary)
         .font(.headline.weight(.semibold))
-        .frame(width: 40, height: keyHeight)
+        .frame(width: 40, height: 40)
         .background(Color.black.opacity(0.4))
         .cornerRadius(5)
     }
@@ -97,7 +87,6 @@ struct KeyButton: View, ClickableKey {
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var settings: KeyboardSettings
     @Environment(\.insertTextHandler) private var insertTextHandler
-    @Environment(\.keyHeight) private var keyHeight
 
     var body: some View {
         Button(action: {
@@ -116,7 +105,7 @@ struct KeyButton: View, ClickableKey {
                 .fixedSize()
                 .scaledToFit()
                 .scaleEffect(0.75)
-                .frame(height: keyHeight)
+                .frame(height: 40)
                 .frame(minWidth: 32, maxWidth: .infinity)
                 .foregroundColor(.primary)
                 .background(colorScheme.keyboardKeyColor)
@@ -128,7 +117,6 @@ struct KeyButton: View, ClickableKey {
 
 struct FRAccentKeyButton: View {
     @Binding var text: String
-    @Environment(\.keyHeight) private var keyHeight
 
     var body: some View {
         Button(action: {
@@ -138,7 +126,7 @@ struct FRAccentKeyButton: View {
                 .foregroundColor(.primary)
                 .font(.system(size: 25))
                 .padding(5)
-                .frame(height: keyHeight)
+                .frame(height: 40)
                 .frame(minWidth: 20, idealWidth: 25, maxWidth: 25)
                 .background(Color.black.opacity(0.4))
                 .cornerRadius(5)
@@ -172,7 +160,6 @@ struct SpaceKeyButton: View, ClickableKey {
     @Binding var text: String
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.insertTextHandler) private var insertTextHandler
-    @Environment(\.keyHeight) private var keyHeight
 
     var content: some View {
         let spaceText = Text("space", bundle: .module)
@@ -195,7 +182,7 @@ struct SpaceKeyButton: View, ClickableKey {
             content
                 .padding()
                 .frame(minWidth: 190)
-                .frame(height: keyHeight)
+                .frame(height: 40)
                 .foregroundColor(.primary)
                 .background(colorScheme.keyboardKeyColor)
                 .cornerRadius(5)
@@ -208,7 +195,6 @@ struct DeleteKeyButton: View {
     @Binding var text: String
     @State private var deleteTimer: Timer? = nil
     @Environment(\.deleteBackwardHandler) private var deleteBackwardHandler
-    @Environment(\.keyHeight) private var keyHeight
 
     var body: some View {
         Button(action: {
@@ -230,7 +216,7 @@ struct DeleteKeyButton: View {
         .padding(10)
         .foregroundColor(.primary)
         .font(.headline.weight(.light))
-        .frame(width: 40, height: keyHeight)
+        .frame(width: 40, height: 40)
         .background(Color.black.opacity(0.4))
         .cornerRadius(5)
         .onLongPressGesture(minimumDuration: 0.5, maximumDistance: 50, pressing: { pressing in
@@ -265,7 +251,6 @@ struct DeleteKeyButton: View {
 struct EmojiKeyButton: View, ClickableKey {
     @Binding var text: String
     @Environment(\.colorScheme) var colorScheme
-    @Environment(\.keyHeight) private var keyHeight
 
     var body: some View {
         Button(action: { didClick() }) {
@@ -277,7 +262,7 @@ struct EmojiKeyButton: View, ClickableKey {
         }
         .padding(10)
         .foregroundColor(.primary)
-        .frame(height: keyHeight)
+        .frame(height: 40)
         .background(colorScheme.keyboardKeyColor)
         .cornerRadius(7)
         .shadow(color: .black, radius: 0, y: 1)
@@ -288,7 +273,6 @@ struct ModeSwitchKeyButton: View, ClickableKey {
     var title: String
     var action: () -> Void
     @Environment(\.colorScheme) var colorScheme
-    @Environment(\.keyHeight) private var keyHeight
 
     var body: some View {
         Button(action: { action(); didClick() }) {
@@ -296,7 +280,7 @@ struct ModeSwitchKeyButton: View, ClickableKey {
                 .font(.system(size: 15, weight: .medium))
                 .padding(2)
                 .frame(width: 40)
-                .frame(height: keyHeight)
+                .frame(height: 40)
                 .foregroundColor(.primary)
                 .background(colorScheme.keyboardKeyColor)
                 .cornerRadius(5)
@@ -310,7 +294,6 @@ struct GridKeyButton: View, ClickableKey {
     var label: String
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.insertTextHandler) private var insertTextHandler
-    @Environment(\.keyHeight) private var keyHeight
 
     var body: some View {
         Button(action: {
@@ -326,7 +309,7 @@ struct GridKeyButton: View, ClickableKey {
                 .fixedSize()
                 .scaledToFit()
                 .scaleEffect(0.75)
-                .frame(height: keyHeight)
+                .frame(height: 40)
                 .frame(minWidth: 32, maxWidth: .infinity)
                 .foregroundColor(.primary)
                 .background(colorScheme.keyboardKeyColor)
@@ -339,7 +322,6 @@ struct GridKeyButton: View, ClickableKey {
 struct ActionKeyButton: View {
     @State var icon: Icon
     var action: () -> Void
-    @Environment(\.keyHeight) private var keyHeight
 
     var iconView: some View {
         if #available(iOS 15.0, macOS 12, *) {
@@ -354,7 +336,7 @@ struct ActionKeyButton: View {
             iconView
                 .padding()
                 .frame(minWidth: 30, maxWidth: 100)
-                .frame(height: keyHeight)
+                .frame(height: 40)
                 .foregroundColor(.white)
                 .background(Color.blue)
                 .cornerRadius(7)
