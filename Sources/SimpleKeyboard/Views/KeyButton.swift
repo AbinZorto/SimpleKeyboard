@@ -29,6 +29,28 @@ public extension EnvironmentValues {
     }
 }
 
+// MARK: - Feedback environment (haptics and sound)
+
+private struct HapticsEnabledKey: EnvironmentKey {
+    static let defaultValue: Bool = false
+}
+
+private struct SoundEnabledKey: EnvironmentKey {
+    static let defaultValue: Bool = false
+}
+
+public extension EnvironmentValues {
+    var hapticsEnabled: Bool {
+        get { self[HapticsEnabledKey.self] }
+        set { self[HapticsEnabledKey.self] = newValue }
+    }
+
+    var soundEnabled: Bool {
+        get { self[SoundEnabledKey.self] }
+        set { self[SoundEnabledKey.self] = newValue }
+    }
+}
+
 protocol ClickableKey {
     func didClick()
 }
@@ -87,6 +109,8 @@ struct KeyButton: View, ClickableKey {
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var settings: KeyboardSettings
     @Environment(\.insertTextHandler) private var insertTextHandler
+    @Environment(\.hapticsEnabled) private var hapticsEnabled
+    @Environment(\.soundEnabled) private var soundEnabled
 
     private var isLowercaseLetter: Bool {
         return letter == letter.lowercased() && letter != letter.uppercased()
@@ -121,14 +145,29 @@ struct KeyButton: View, ClickableKey {
                 .shadow(color: .black, radius: 0, y: 1)
         }
     }
+
+    func didClick() {
+        #if canImport(UIKit)
+        if hapticsEnabled {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        if soundEnabled {
+            UIDevice.current.playInputClick()
+        }
+        #endif
+    }
 }
 
 struct FRAccentKeyButton: View {
     @Binding var text: String
+    @Environment(\.hapticsEnabled) private var hapticsEnabled
+    @Environment(\.soundEnabled) private var soundEnabled
 
     var body: some View {
         Button(action: {
             self.action()
+            generateFeedback()
         }) {
             Text("´")
                 .foregroundColor(.primary)
@@ -162,12 +201,26 @@ struct FRAccentKeyButton: View {
 
         text.append(modified)
     }
+
+    private func generateFeedback() {
+        #if canImport(UIKit)
+        if hapticsEnabled {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        if soundEnabled {
+            UIDevice.current.playInputClick()
+        }
+        #endif
+    }
 }
 
 struct SpaceKeyButton: View, ClickableKey {
     @Binding var text: String
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.insertTextHandler) private var insertTextHandler
+    @Environment(\.hapticsEnabled) private var hapticsEnabled
+    @Environment(\.soundEnabled) private var soundEnabled
 
     var content: some View {
         let spaceText = Text("space", bundle: .module)
@@ -197,12 +250,26 @@ struct SpaceKeyButton: View, ClickableKey {
                 .shadow(color: .black, radius: 1, y: 1)
         }
     }
+
+    func didClick() {
+        #if canImport(UIKit)
+        if hapticsEnabled {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        if soundEnabled {
+            UIDevice.current.playInputClick()
+        }
+        #endif
+    }
 }
 
 struct DeleteKeyButton: View {
     @Binding var text: String
     @State private var deleteTimer: Timer? = nil
     @Environment(\.deleteBackwardHandler) private var deleteBackwardHandler
+    @Environment(\.hapticsEnabled) private var hapticsEnabled
+    @Environment(\.soundEnabled) private var soundEnabled
 
     var body: some View {
         Button(action: {
@@ -246,6 +313,7 @@ struct DeleteKeyButton: View {
                     _ = self.text.removeLast()
                 }
             }
+            generateFeedback()
         }
         RunLoop.current.add(deleteTimer!, forMode: .common)
     }
@@ -254,11 +322,25 @@ struct DeleteKeyButton: View {
         deleteTimer?.invalidate()
         deleteTimer = nil
     }
+
+    private func generateFeedback() {
+        #if canImport(UIKit)
+        if hapticsEnabled {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        if soundEnabled {
+            UIDevice.current.playInputClick()
+        }
+        #endif
+    }
 }
 
 struct EmojiKeyButton: View, ClickableKey {
     @Binding var text: String
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.hapticsEnabled) private var hapticsEnabled
+    @Environment(\.soundEnabled) private var soundEnabled
 
     var body: some View {
         Button(action: { didClick() }) {
@@ -275,12 +357,26 @@ struct EmojiKeyButton: View, ClickableKey {
         .cornerRadius(7)
         .shadow(color: .black, radius: 0, y: 1)
     }
+
+    func didClick() {
+        #if canImport(UIKit)
+        if hapticsEnabled {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        if soundEnabled {
+            UIDevice.current.playInputClick()
+        }
+        #endif
+    }
 }
 
 struct ModeSwitchKeyButton: View, ClickableKey {
     var title: String
     var action: () -> Void
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.hapticsEnabled) private var hapticsEnabled
+    @Environment(\.soundEnabled) private var soundEnabled
 
     var body: some View {
         Button(action: { action(); didClick() }) {
@@ -295,6 +391,18 @@ struct ModeSwitchKeyButton: View, ClickableKey {
                 .shadow(color: .black, radius: 0, y: 1)
         }
     }
+
+    func didClick() {
+        #if canImport(UIKit)
+        if hapticsEnabled {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        if soundEnabled {
+            UIDevice.current.playInputClick()
+        }
+        #endif
+    }
 }
 
 struct GridKeyButton: View, ClickableKey {
@@ -302,6 +410,8 @@ struct GridKeyButton: View, ClickableKey {
     var label: String
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.insertTextHandler) private var insertTextHandler
+    @Environment(\.hapticsEnabled) private var hapticsEnabled
+    @Environment(\.soundEnabled) private var soundEnabled
 
     var body: some View {
         Button(action: {
@@ -325,11 +435,25 @@ struct GridKeyButton: View, ClickableKey {
                 .shadow(color: .black, radius: 0, y: 1)
         }
     }
+
+    func didClick() {
+        #if canImport(UIKit)
+        if hapticsEnabled {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        if soundEnabled {
+            UIDevice.current.playInputClick()
+        }
+        #endif
+    }
 }
 
 struct ActionKeyButton: View {
     @State var icon: Icon
     var action: () -> Void
+    @Environment(\.hapticsEnabled) private var hapticsEnabled
+    @Environment(\.soundEnabled) private var soundEnabled
 
     var iconView: some View {
         if #available(iOS 15.0, macOS 12, *) {
@@ -340,7 +464,7 @@ struct ActionKeyButton: View {
     }
 
     var body: some View {
-        Button(action: self.action) {
+        Button(action: { self.action(); generateFeedback() }) {
             iconView
                 .padding()
                 .frame(minWidth: 30, maxWidth: 100)
@@ -350,6 +474,18 @@ struct ActionKeyButton: View {
                 .cornerRadius(7)
                 .shadow(color: .black, radius: 2, y: 2)
         }
+    }
+
+    private func generateFeedback() {
+        #if canImport(UIKit)
+        if hapticsEnabled {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        if soundEnabled {
+            UIDevice.current.playInputClick()
+        }
+        #endif
     }
 }
 

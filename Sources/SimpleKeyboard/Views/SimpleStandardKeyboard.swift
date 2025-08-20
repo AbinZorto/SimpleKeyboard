@@ -15,6 +15,10 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
     private let insertTextHandlerOverride: ((String) -> Void)?
     private let deleteBackwardHandlerOverride: (() -> Void)?
 
+    // Feedback toggles
+    private let hapticsEnabled: Bool
+    private let soundEnabled: Bool
+
     public init(
         settings: KeyboardSettings,
         textInput textInputOverride: Binding<String>? = nil,
@@ -24,7 +28,9 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
         emojiSystemName: String? = nil,
         onEmojiTap: (() -> Void)? = nil,
         insertTextHandler: ((String) -> Void)? = nil,
-        deleteBackwardHandler: (() -> Void)? = nil
+        deleteBackwardHandler: (() -> Void)? = nil,
+        hapticsEnabled: Bool = false,
+        soundEnabled: Bool = false
     ) {
         // Initialize stored properties first
         self.settings = settings
@@ -35,6 +41,8 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
         self.onEmojiTapOverride = onEmojiTap
         self.insertTextHandlerOverride = insertTextHandler
         self.deleteBackwardHandlerOverride = deleteBackwardHandler
+        self.hapticsEnabled = hapticsEnabled
+        self.soundEnabled = soundEnabled
 
         // Now safe to use self
         if let textInputOverride {
@@ -213,6 +221,8 @@ public struct SimpleStandardKeyboard: View, ThemeableView {
             .environmentObject(settings)
             .environment(\.insertTextHandler, insertTextHandlerOverride ?? settings.insertTextHandler)
             .environment(\.deleteBackwardHandler, deleteBackwardHandlerOverride ?? settings.deleteBackwardHandler)
+            .environment(\.hapticsEnabled, hapticsEnabled)
+            .environment(\.soundEnabled, soundEnabled)
         }
     }
 }
@@ -222,6 +232,8 @@ struct CustomEmojiKeyButton: View, ClickableKey {
     var systemName: String
     var onTap: (() -> Void)?
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.hapticsEnabled) private var hapticsEnabled
+    @Environment(\.soundEnabled) private var soundEnabled
 
     var body: some View {
         Button(action: { didClick(); onTap?() }) {
@@ -238,15 +250,29 @@ struct CustomEmojiKeyButton: View, ClickableKey {
         .cornerRadius(7)
         .shadow(color: .black, radius: 0, y: 1)
     }
+
+    func didClick() {
+        #if canImport(UIKit)
+        if hapticsEnabled {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        if soundEnabled {
+            UIDevice.current.playInputClick()
+        }
+        #endif
+    }
 }
 
 // New system-image-based action button (keeps ActionKeyButton untouched)
 struct SystemImageActionKeyButton: View {
     var systemName: String
     var action: () -> Void
+    @Environment(\.hapticsEnabled) private var hapticsEnabled
+    @Environment(\.soundEnabled) private var soundEnabled
 
     var body: some View {
-        Button(action: action) {
+        Button(action: { action(); generateFeedback() }) {
             if #available(iOS 14, macOS 11, *) {
                 AnyView(Image(systemName: systemName))
             } else {
@@ -260,6 +286,18 @@ struct SystemImageActionKeyButton: View {
         .background(Color.blue)
         .cornerRadius(7)
         .shadow(color: .black, radius: 2, y: 2)
+    }
+
+    private func generateFeedback() {
+        #if canImport(UIKit)
+        if hapticsEnabled {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        if soundEnabled {
+            UIDevice.current.playInputClick()
+        }
+        #endif
     }
 }
 
@@ -285,7 +323,9 @@ struct SimpleStandardKeyboard_Previews: PreviewProvider {
                     emojiSystemName: "xmark.circle.fill",
                     onEmojiTap: {
                     // Optional: hook for custom emoji tap behavior
-                    }
+                    },
+                    hapticsEnabled: true,
+                    soundEnabled: true
                 )
             }
         }
