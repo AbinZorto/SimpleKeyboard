@@ -88,6 +88,13 @@ struct KeyButton: View, ClickableKey {
     @EnvironmentObject var settings: KeyboardSettings
     @Environment(\.insertTextHandler) private var insertTextHandler
 
+    private var isLowercaseLetter: Bool {
+        return letter == letter.lowercased() && letter != letter.uppercased()
+    }
+
+    private var displayScale: CGFloat { isLowercaseLetter ? 0.95 : 0.8 }
+    private var verticalOffset: CGFloat { isLowercaseLetter ? -1 : 0 }
+
     var body: some View {
         Button(action: {
             if let insert = insertTextHandler {
@@ -104,7 +111,8 @@ struct KeyButton: View, ClickableKey {
                 .font(.system(size: 25))
                 .fixedSize()
                 .scaledToFit()
-                .scaleEffect(0.75)
+                .scaleEffect(displayScale)
+                .offset(y: verticalOffset)
                 .frame(height: 40)
                 .frame(minWidth: 32, maxWidth: .infinity)
                 .foregroundColor(.primary)
